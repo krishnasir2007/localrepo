@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Breakout Game</title>
+<style>
+  body {
+    margin: 0;
+    background: #f54c4c;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+
+  h1 {
+    margin-top: 10px;
+  }
+
+  #controls {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    align-items: center;
+  }
+
+  button {
+    padding: 8px 16px;
+    background: #0ff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #000000;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #08f;
+    color: white;
+  }
+
+  #speedControl {
+    width: 100px;
+  }
+
+  canvas {
+    background: #dd00ff;
+    border: 6px solid rgb(255, 221, 0); /* Extended border */
+    display: block;
+    margin-top: 10px;
+  }
+
+  #info {
+    margin-top: 8px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  #gameOverText {
+    color: red;
+    font-size: 22px;
+    margin-top: 10px;
+    visibility: hidden;
+  }
+</style>
+</head>
+<body>
+<h1>🎮 Breakout Game</h1>
+
+<div id="controls">
+  <button id="startBtn">Start</button>
+  <button id="pauseBtn">Pause</button>
+  <label>Speed: <span id="speedValue">3</span></label>
+  <input type="range" id="speedControl" min="1" max="10" value="3">
+</div>
+
+<canvas id="gameCanvas" width="900" height="550"></canvas>
+<div id="info">
+  <div>Score: <span id="score">0</span></div>
+  <div>Time: <span id="timer">0</span> s</div>
+</div>
+<div id="gameOverText">💥 GAME OVER 💥</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Ball settings
+const ballRadius = 8;
+let x = canvas.width / 2;
+let y = canvas.height - 30;
+let dx = 3;
+let dy = -3;
+let speedMultiplier = 1;
+
+// Paddle settings
+const paddleHeight = 10;
+const paddleWidth = 85;
+let paddleX = (canvas.width - paddleWidth) / 2;
+
+// Brick settings
+const brickRowCount = 10;      // more rows
+const brickColumnCount = 15;  // more columns
+const brickWidth = 50;
+const brickHeight = 20;
+const brickPadding = 8;
+const brickOffsetTop = 30;
+const brickOffsetLeft = 20;
+
+let rightPressed = false;
+let leftPressed = false;
+let score = 0;
+let isRunning = false;
+let gameOver = false;
+let timeElapsed = 0;
+let timerInterval;
+
+// Initialize bricks
+const bricks = [];
+for (let c = 0; c < brickColumnCount; c++) {
+  bricks[c] = [];
+  for (let r = 0; r < brickRowCount; r++) {
+    bricks[c][r] = { x: 0, y: 0, status: 1 };
+  }
+}
+
+// Controls
+document.addEventListener("keydown", keyDownHandler, false);
+document.addEventListener("keyup", keyUpHandler, false);
+document.addEventListener("mousemove", mouseMoveHandler, false);
+
+function keyDownHandler(e) {
+  if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
+  else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+}
+
+function keyUpHandler(e) {
+  if (e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
+  else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
+}
+
+function mouseMoveHandler(e) {
+  const relativeX = e.clientX - canvas.offsetLeft;
+  if (relativeX > 0 && relativeX < canvas.width) paddleX = relativeX - paddleWidth / 2;
+}
+
+// Collision detection
+function collisionDetection() {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      const b = bricks[c][r];
+      if (b.status === 1) {
+        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+          dy = -dy;
+          b.status = 0;
+          score++;
+          document.getElementById("score").textContent = score;
+          if (score === brickRowCount * brickColumnCount) showGameOver("🎉 YOU WIN! 🎉");
+        }
+      }
+    }
+  }
+}
+
+// Draw functions
+function drawBall() {
+  ctx.beginPath();
+  ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+  ctx.fillStyle = "#0ff";
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawPaddle() {
+  ctx.beginPath();
+  ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+  ctx.fillStyle = "#0f0";
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawBricks() {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      if (bricks[c][r].status === 1) {
+        const brickX = c*(brickWidth+brickPadding)+brickOffsetLeft;
+        const brickY = r*(brickHeight+brickPadding)+brickOffsetTop;
+        bricks[c][r].x = brickX;
+        bricks[c][r].y = brickY;
+        ctx.beginPath();
+        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+        ctx.fillStyle = "#FFA500"; // Orange bricks
+        ctx.fill();
+        ctx.closePath();
+      }
+    }
+  }
+}
+
+function draw() {
+  if(!isRunning) return;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawBricks();
+  drawBall();
+  drawPaddle();
+  collisionDetection();
+
+  // Ball collision
+  if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+  if(y + dy < ballRadius) dy = -dy;
+  else if(y + dy > canvas.height - ballRadius){
+    if(x > paddleX && x < paddleX + paddleWidth) dy = -dy;
+    else showGameOver("💥 GAME OVER 💥");
+  }
+
+  if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
+  else if(leftPressed && paddleX > 0) paddleX -= 7;
+
+  x += dx*speedMultiplier;
+  y += dy*speedMultiplier;
+
+  requestAnimationFrame(draw);
+}
+
+// Game over
+function showGameOver(text){
+  isRunning = false;
+  gameOver = true;
+  clearInterval(timerInterval);
+  const msg = document.getElementById("gameOverText");
+  msg.textContent = text;
+  msg.style.visibility = "visible";
+}
+
+// Timer
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeElapsed++;
+    document.getElementById("timer").textContent = timeElapsed;
+  },1000);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+
+// Buttons
+const startBtn = document.getElementById("startBtn");
+startBtn.addEventListener("click", ()=>{
+  if(!isRunning && !gameOver){
+    isRunning = true;
+    startTimer();
+    draw();
+    startBtn.textContent = "Restart";
+  } else { document.location.reload(); }
+});
+
+document.getElementById("pauseBtn").addEventListener("click", ()=>{
+  if(isRunning){ isRunning=false; stopTimer(); }
+  else if(!gameOver){ isRunning=true; startTimer(); draw(); }
+});
+
+// Speed control
+const speedControl = document.getElementById("speedControl");
+const speedValue = document.getElementById("speedValue");
+speedControl.addEventListener("input",(e)=>{
+  speedMultiplier = e.target.value/3;
+  speedValue.textContent = e.target.value;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Success</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(to right, #11998e, #38ef7d); font-family: 'Roboto', sans-serif; }
+  .container { background: #fff; padding: 30px; border-radius: 12px; width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  h2 { color: #333; margin-bottom: 20px; }
+  p { margin: 6px 0; font-size: 16px; color: #555; }
+  button { padding: 12px 20px; border: none; border-radius: 6px; background: #38ef7d; color: #fff; font-size: 16px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+  button:hover { background: #11998e; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Registration Successful!</h2>
+  <div id="userInfo"></div>
+  <button onclick="goNext()">Next Step → Play Game</button>
+</div>
+
+<script>
+const userData = JSON.parse(localStorage.getItem('userData'));
+const userInfoDiv = document.getElementById('userInfo');
+
+if(userData){
+  userInfoDiv.innerHTML = `
+    <p><strong>Name:</strong> ${userData.name} ${userData.surname}</p>
+    <p><strong>Email:</strong> ${userData.email}</p>
+    <p><strong>Father's Name:</strong> ${userData.fatherName}</p>
+    <p><strong>Address:</strong> ${userData.address}</p>
+    <p><strong>Phone:</strong> ${userData.phone}</p>
+  `;
+}
+
+function goNext() {
+  window.location.href = "game.html";
+}
+</script>
+</body>
+</html>

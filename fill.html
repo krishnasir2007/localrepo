@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+  body { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(to right, #36d1dc, #5b86e5); }
+  .container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 360px; text-align: center; }
+  h2 { margin-bottom: 20px; color: #333; }
+  input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+  button { width: 100%; padding: 12px; margin-top: 12px; border: none; border-radius: 6px; background: #5b86e5; color: #fff; font-size: 16px; cursor: pointer; transition: 0.3s; }
+  button:hover { background: #36d1dc; }
+  #otpSection { display: none; margin-top: 15px; }
+  .alert { color: red; font-size: 14px; margin-top: 6px; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>User Registration</h2>
+  <form id="userForm">
+    <input type="text" id="name" placeholder="First Name" required>
+    <input type="text" id="surname" placeholder="Surname" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="text" id="fatherName" placeholder="Father's Name" required>
+    <input type="text" id="address" placeholder="Address" required>
+    <input type="tel" id="phone" placeholder="Phone Number" required>
+    <button type="submit">Send OTP</button>
+  </form>
+
+  <div id="otpSection">
+    <input type="text" id="otpInput" placeholder="Enter OTP" maxlength="6">
+    <button id="verifyOtpBtn">Verify OTP</button>
+    <div class="alert" id="otpAlert">Incorrect OTP. Try again!</div>
+  </div>
+</div>
+
+<script>
+let generatedOtp = null;
+
+// Form submission
+document.getElementById('userForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const userData = {
+    name: document.getElementById('name').value,
+    surname: document.getElementById('surname').value,
+    email: document.getElementById('email').value,
+    fatherName: document.getElementById('fatherName').value,
+    address: document.getElementById('address').value,
+    phone: document.getElementById('phone').value
+  };
+
+  localStorage.setItem('userData', JSON.stringify(userData));
+
+  generatedOtp = Math.floor(100000 + Math.random() * 900000);
+  alert("Your OTP is: " + generatedOtp);
+
+  document.getElementById('otpSection').style.display = 'block';
+});
+
+// OTP verification
+document.getElementById('verifyOtpBtn').addEventListener('click', function() {
+  const enteredOtp = document.getElementById('otpInput').value;
+  const otpAlert = document.getElementById('otpAlert');
+
+  if (enteredOtp == generatedOtp) {
+    window.location.href = "success.html";
+  } else {
+    otpAlert.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
